@@ -1,13 +1,16 @@
 use crate::bit_utils::get_bit_from_byte;
 use crate::display::chip8_display::Chip8Display;
+use crate::input::Input;
 use crate::machine::display_state::DisplayState;
 use crate::machine::instruction::Instruction;
 use crate::machine::ram::Ram;
 use crate::machine::registers::Registers;
 use crate::machine::stack::Stack;
 use rand::Rng;
+use std::cell::RefCell;
 use std::fmt::{Debug, Formatter};
 use std::fs::read;
+use std::rc::Rc;
 
 // 16 default font sprites; each sprite is 5 bytes long (8*5 pixels)
 const FONT_SPRITES: [u8; 5 * 16] = [
@@ -40,12 +43,13 @@ pub struct Chip8<'a> {
     registers: Registers,
     stack: Stack,
     display: &'a mut dyn Chip8Display,
+    input: Rc<RefCell<Input>>,
     display_state: DisplayState,
     tick: u8,
 }
 
 impl<'a> Chip8<'a> {
-    pub fn new(display: &'a mut dyn Chip8Display) -> Chip8 {
+    pub fn new(display: &'a mut dyn Chip8Display, input: Rc<RefCell<Input>>) -> Chip8<'a> {
         let mut ram = Ram::initialise();
         ram.write_bytes(0x000, &FONT_SPRITES);
         Chip8 {
@@ -53,6 +57,7 @@ impl<'a> Chip8<'a> {
             ram,
             registers: Registers::new(),
             stack: Stack::new(),
+            input,
             display,
             display_state: DisplayState::new(DISPLAY_COLS, DISPLAY_ROWS),
             tick: 0,
@@ -63,17 +68,6 @@ impl<'a> Chip8<'a> {
         let bytes = read(file).expect("Unable to read file");
         self.ram.write_bytes(PROGRAM_OFFSET, &bytes);
         self.program_counter = PROGRAM_OFFSET;
-    }
-
-    pub fn run(&mut self) {
-        loop {
-            self.tick += 1;
-            if self.tick % 10 == 0 {
-                self.decr_timers();
-                self.tick = 0;
-            }
-            self.tick();
-        }
     }
 
     fn decr_timers(&mut self) {
@@ -124,7 +118,12 @@ impl<'a> Chip8<'a> {
         self.display.draw(&self.display_state.as_bytes());
     }
 
-    fn tick(&mut self) {
+    pub fn tick(&mut self) {
+        self.tick += 1;
+        if self.tick % 10 == 0 {
+            self.decr_timers();
+            self.tick = 0;
+        }
         let next_instruction: Instruction = self.ram.read_bytes(self.program_counter, 2).into();
         self.program_counter += 0x002;
         match next_instruction {
@@ -243,13 +242,32 @@ impl<'a> Chip8<'a> {
                 let rnd = rand::thread_rng().gen_range(0..=255) as u8;
                 self.registers.write_vx(register as usize, rnd & value);
             }
-            Instruction::_Ex9E(_) => todo!(),
-            Instruction::_ExA1(_) => todo!(),
+            Instruction::_Ex9E(register) => {
+                let i = self.input.borrow();
+                let expected_key = self.registers.read_vx(register as usize);
+                if i.current_key == Some(expected_key) {
+                    self.program_counter += 2;
+                }
+            }
+            Instruction::_ExA1(register) => {
+                let i = self.input.borrow();
+                let expected_key = self.registers.read_vx(register as usize);
+                if i.current_key != Some(expected_key) {
+                    self.program_counter += 2;
+                }
+            }
             Instruction::_Fx07(register) => {
                 self.registers
                     .write_vx(register as usize, self.registers.read_delay_timer());
             }
-            Instruction::_Fx0A(_) => todo!(),
+            Instruction::_Fx0A(register) => {
+                let i = self.input.borrow();
+                if let Some(key) = i.current_key {
+                    self.registers.write_vx(register as usize, key);
+                } else {
+                    self.program_counter -= 2;
+                }
+            }
             Instruction::_Fx15(register) => {
                 self.registers
                     .set_delay_timer(self.registers.read_vx(register as usize));
