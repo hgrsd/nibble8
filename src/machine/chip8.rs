@@ -1,8 +1,8 @@
-use std::fmt::{Debug, Formatter};
 use crate::display::virtual_display::VirtualDisplay;
 use crate::machine::ram::Ram;
 use crate::machine::registers::Registers;
 use crate::machine::stack::Stack;
+use std::fmt::{Debug, Formatter};
 
 // 16 default font sprites; each sprite is 5 bytes long (8*5 pixels)
 const FONT_SPRITES: [u8; 5 * 16] = [
@@ -21,7 +21,7 @@ const FONT_SPRITES: [u8; 5 * 16] = [
     0xF0, 0x80, 0x80, 0x80, 0xF0, // C
     0xE0, 0x90, 0x90, 0x90, 0xE0, // D
     0xF0, 0x80, 0xF0, 0x80, 0xF0, // E
-    0xF0, 0x80, 0xF0, 0x80, 0x80  // F
+    0xF0, 0x80, 0xF0, 0x80, 0x80, // F
 ];
 
 pub struct Chip8<'a> {
@@ -31,7 +31,7 @@ pub struct Chip8<'a> {
     display: &'a dyn VirtualDisplay,
 }
 
-impl <'a> Chip8<'a> {
+impl<'a> Chip8<'a> {
     pub fn new(display: &'a dyn VirtualDisplay) -> Chip8 {
         let mut ram = Ram::initialise();
         // initialise the font sprites at 0 offset

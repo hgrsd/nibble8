@@ -1,10 +1,9 @@
 use crate::display::terminal_display::TerminalDisplay;
 use crate::machine::chip8::Chip8;
 
-mod machine;
 mod display;
 mod input;
-
+mod machine;
 
 fn main() {
     let display = TerminalDisplay::new();
