@@ -1,13 +1,15 @@
 use std::fmt::{Debug, Formatter};
 
+pub const MAX_SIZE: usize = 4096;
+
 pub struct Ram {
-    memory: [u8; 4096],
+    memory: [u8; MAX_SIZE],
 }
 
 impl Ram {
     pub fn initialise() -> Ram {
         Ram {
-            memory: [0x00; 4096],
+            memory: [0x00; MAX_SIZE],
         }
     }
 

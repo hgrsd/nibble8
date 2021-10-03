@@ -46,7 +46,7 @@ impl From<&[u8]> for Instruction {
         let kk: u8 = bytes[1];
         let n: u8 = bytes[1] & 0x0F;
 
-        let combined: u16 = (bytes[0] as u16) << 8 | bytes[1];
+        let combined: u16 = (bytes[0] as u16) << 8 | bytes[1] as u16;
         let nnn: u16 = combined & 0x0FFF;
 
         match (op_type, x, y, n) {
