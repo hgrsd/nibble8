@@ -32,6 +32,22 @@ impl Registers {
     pub fn write_i(&mut self, bytes: u16) {
         self.i = bytes;
     }
+
+    pub fn read_sound_timer(&self) -> u8 {
+        self.sound
+    }
+
+    pub fn set_sound_timer(&mut self, byte: u8) {
+        self.sound = byte;
+    }
+
+    pub fn read_delay_timer(&self) -> u8 {
+        self.delay
+    }
+
+    pub fn set_delay_timer(&mut self, byte: u8) {
+        self.delay = byte;
+    }
 }
 
 impl Debug for Registers {

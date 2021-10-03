@@ -5,6 +5,7 @@ use crate::machine::instruction::Instruction;
 use crate::machine::ram::Ram;
 use crate::machine::registers::Registers;
 use crate::machine::stack::Stack;
+use rand::Rng;
 use std::fmt::{Debug, Formatter};
 use std::fs::read;
 
@@ -64,6 +65,12 @@ impl<'a> Chip8<'a> {
 
     pub fn run(&mut self) {
         loop {
+            let delay = self.registers.read_delay_timer();
+            if delay > 0 {
+                self.registers.set_delay_timer(delay - 1);
+                continue;
+            }
+
             let next_instruction: Instruction = self.ram.read_bytes(self.program_counter, 2).into();
             self.program_counter += 0x002;
             match next_instruction {
@@ -170,12 +177,66 @@ impl<'a> Chip8<'a> {
                 Instruction::_Annn(addr) => {
                     self.registers.write_i(addr);
                 }
+                Instruction::_Bnnn(addr) => {
+                    let v0 = self.registers.read_vx(0x00);
+                    self.program_counter += addr as usize + v0 as usize;
+                }
                 Instruction::_Dxyn(reg_x, reg_y, n_rows) => {
                     let x = self.registers.read_vx(reg_x as usize);
                     let y = self.registers.read_vx(reg_y as usize);
                     self.load_sprite(x, y, n_rows);
                 }
-                _ => unimplemented!(),
+                Instruction::_Cxkk(register, value) => {
+                    let rnd = rand::thread_rng().gen_range(0..=255) as u8;
+                    self.registers.write_vx(register as usize, rnd & value);
+                }
+                Instruction::_Ex9E(_) => todo!(),
+                Instruction::_ExA1(_) => todo!(),
+                Instruction::_Fx07(register) => {
+                    self.registers
+                        .write_vx(register as usize, self.registers.read_delay_timer());
+                }
+                Instruction::_Fx0A(_) => todo!(),
+                Instruction::_Fx15(register) => {
+                    self.registers
+                        .set_delay_timer(self.registers.read_vx(register as usize));
+                }
+                Instruction::_Fx18(register) => {
+                    self.registers
+                        .set_sound_timer(self.registers.read_vx(register as usize));
+                }
+                Instruction::_Fx1E(register) => {
+                    // TODO - do we need to guard against overflows?
+                    self.registers.write_i(
+                        self.registers.read_i() + self.registers.read_vx(register as usize) as u16,
+                    );
+                }
+                Instruction::_Fx29(register) => {
+                    let byte = self.registers.read_vx(register as usize);
+                    let address = 0x000 + (byte * 5);
+                    self.registers.write_i(address as u16);
+                }
+                Instruction::_Fx33(register) => {
+                    let number = self.registers.read_vx(register as usize);
+                    let addr = self.registers.read_i();
+                    self.ram.write_bytes(addr as usize, &[number / 100]);
+                    self.ram
+                        .write_bytes(addr as usize + 1, &[number % 100 / 10]);
+                    self.ram.write_bytes(addr as usize + 2, &[number % 10]);
+                }
+                Instruction::_Fx55(last_register) => {
+                    let addr = self.registers.read_i() as usize;
+                    for i in 0..=last_register as usize {
+                        self.ram.write_bytes(addr + i, &[self.registers.read_vx(i)]);
+                    }
+                }
+                Instruction::_Fx65(last_register) => {
+                    let addr = self.registers.read_i() as usize;
+                    for i in 0..=last_register as usize {
+                        let bytes = self.ram.read_bytes(addr + i, 1);
+                        self.registers.write_vx(i, bytes[0]);
+                    }
+                }
             }
         }
     }

@@ -18,7 +18,7 @@ impl Chip8Display for TerminalDisplay {
         for byte in bytes {
             for bit in 0..8 {
                 let is_on = get_bit_from_byte(bit, byte);
-                print!("{}", if is_on { "*" } else { "_" });
+                print!("{}", if is_on { "\u{25AF}" } else { " " });
                 col += 1;
                 if col % self.cols == 0 {
                     println!();
