@@ -1,4 +1,4 @@
-use crate::{bit_utils::get_bit_from_byte, display::virtual_display::VirtualDisplay};
+use crate::{bit_utils::get_bit_from_byte, display::chip8_display::Chip8Display};
 
 pub struct TerminalDisplay {
     cols: usize,
@@ -11,7 +11,7 @@ impl TerminalDisplay {
     }
 }
 
-impl VirtualDisplay for TerminalDisplay {
+impl Chip8Display for TerminalDisplay {
     fn draw(&mut self, bytes: &[u8]) {
         print!("\x1B[2J\x1B[1;1H"); // clear screen & move cursor to (0, 0)
         let mut col = 0;

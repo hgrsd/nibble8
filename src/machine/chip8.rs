@@ -1,5 +1,5 @@
 use crate::bit_utils::get_bit_from_byte;
-use crate::display::virtual_display::VirtualDisplay;
+use crate::display::chip8_display::Chip8Display;
 use crate::machine::display_state::DisplayState;
 use crate::machine::instruction::Instruction;
 use crate::machine::ram::Ram;
@@ -38,12 +38,12 @@ pub struct Chip8<'a> {
     program_counter: usize,
     registers: Registers,
     stack: Stack,
-    display: &'a mut dyn VirtualDisplay,
+    display: &'a mut dyn Chip8Display,
     display_state: DisplayState,
 }
 
 impl<'a> Chip8<'a> {
-    pub fn new(display: &'a mut dyn VirtualDisplay) -> Chip8 {
+    pub fn new(display: &'a mut dyn Chip8Display) -> Chip8 {
         let mut ram = Ram::initialise();
         ram.write_bytes(0x000, &FONT_SPRITES);
         Chip8 {
@@ -60,6 +60,124 @@ impl<'a> Chip8<'a> {
         let bytes = read(file).expect("Unable to read file");
         self.ram.write_bytes(PROGRAM_OFFSET, &bytes);
         self.program_counter = PROGRAM_OFFSET;
+    }
+
+    pub fn run(&mut self) {
+        loop {
+            let next_instruction: Instruction = self.ram.read_bytes(self.program_counter, 2).into();
+            self.program_counter += 0x002;
+            match next_instruction {
+                Instruction::_00E0 => {
+                    self.display_state.clear();
+                }
+                Instruction::_00EE => {
+                    self.program_counter = self.stack.pop() as usize;
+                }
+                Instruction::_1nnn(addr) => {
+                    self.program_counter = addr as usize;
+                }
+                Instruction::_2nnn(addr) => {
+                    self.stack.push(self.program_counter as u16);
+                    self.program_counter = addr as usize;
+                }
+                Instruction::_3xkk(register, value) => {
+                    if self.registers.read_vx(register as usize) == value {
+                        self.program_counter += 2;
+                    }
+                }
+                Instruction::_4xkk(register, value) => {
+                    if self.registers.read_vx(register as usize) != value {
+                        self.program_counter += 2;
+                    }
+                }
+                Instruction::_5xy0(reg_x, reg_y) => {
+                    if self.registers.read_vx(reg_x as usize)
+                        == self.registers.read_vx(reg_y as usize)
+                    {
+                        self.program_counter += 2;
+                    }
+                }
+                Instruction::_6xkk(register, value) => {
+                    self.registers.write_vx(register as usize, value);
+                }
+                Instruction::_7xkk(register, value) => {
+                    let current_value = self.registers.read_vx(register as usize);
+                    self.registers.write_vx(
+                        register as usize,
+                        (current_value as u16 + value as u16) as u8,
+                    );
+                }
+                Instruction::_8xy0(reg_x, reg_y) => {
+                    self.registers
+                        .write_vx(reg_x as usize, self.registers.read_vx(reg_y as usize));
+                }
+                Instruction::_8xy1(reg_x, reg_y) => {
+                    let x = self.registers.read_vx(reg_x as usize);
+                    let y = self.registers.read_vx(reg_y as usize);
+                    self.registers.write_vx(reg_x as usize, x | y);
+                }
+                Instruction::_8xy2(reg_x, reg_y) => {
+                    let x = self.registers.read_vx(reg_x as usize);
+                    let y = self.registers.read_vx(reg_y as usize);
+                    self.registers.write_vx(reg_x as usize, x & y);
+                }
+                Instruction::_8xy3(reg_x, reg_y) => {
+                    let x = self.registers.read_vx(reg_x as usize);
+                    let y = self.registers.read_vx(reg_y as usize);
+                    self.registers.write_vx(reg_x as usize, x ^ y);
+                }
+                Instruction::_8xy4(reg_x, reg_y) => {
+                    let x = self.registers.read_vx(reg_x as usize) as u16;
+                    let y = self.registers.read_vx(reg_y as usize) as u16;
+                    let added = x + y;
+                    self.registers
+                        .write_vx(0x0F, if added > u8::MAX.into() { 1 } else { 0 });
+                    self.registers.write_vx(reg_x as usize, added as u8);
+                }
+                Instruction::_8xy5(reg_x, reg_y) => {
+                    let x = self.registers.read_vx(reg_x as usize) as u16;
+                    let y = self.registers.read_vx(reg_y as usize) as u16;
+                    self.registers.write_vx(0x0F, if x > y { 1 } else { 0 });
+                    let subtracted = if x > y { x - y } else { 0 };
+                    self.registers.write_vx(reg_x as usize, subtracted as u8);
+                }
+                Instruction::_8xy6(reg_x, _reg_y) => {
+                    let x = self.registers.read_vx(reg_x as usize);
+                    self.registers
+                        .write_vx(0x0F, if get_bit_from_byte(7, &x) { 1 } else { 0 });
+                    self.registers.write_vx(reg_x as usize, x >> 1);
+                }
+                Instruction::_8xy7(reg_x, reg_y) => {
+                    let x = self.registers.read_vx(reg_x as usize);
+                    let y = self.registers.read_vx(reg_y as usize);
+                    let subtracted = if x > y { y - x } else { 0 };
+                    self.registers.write_vx(0x0F, if y > x { 1 } else { 0 });
+                    self.registers.write_vx(reg_x as usize, subtracted);
+                }
+                Instruction::_8xyE(reg_x, _reg_y) => {
+                    let x = self.registers.read_vx(reg_x as usize);
+                    self.registers
+                        .write_vx(0x0F, if get_bit_from_byte(7, &x) { 1 } else { 0 });
+                    self.registers.write_vx(reg_x as usize, x << 1);
+                }
+                Instruction::_9xy0(reg_x, reg_y) => {
+                    let x = self.registers.read_vx(reg_x as usize);
+                    let y = self.registers.read_vx(reg_y as usize);
+                    if x != y {
+                        self.program_counter += 2;
+                    }
+                }
+                Instruction::_Annn(addr) => {
+                    self.registers.write_i(addr);
+                }
+                Instruction::_Dxyn(reg_x, reg_y, n_rows) => {
+                    let x = self.registers.read_vx(reg_x as usize);
+                    let y = self.registers.read_vx(reg_y as usize);
+                    self.load_sprite(x, y, n_rows);
+                }
+                _ => unimplemented!(),
+            }
+        }
     }
 
     fn load_sprite(&mut self, x: u8, y: u8, n_rows: u8) {
@@ -96,45 +214,6 @@ impl<'a> Chip8<'a> {
             }
         }
         self.display.draw(&self.display_state.as_bytes());
-    }
-
-    pub fn run(&mut self) {
-        loop {
-            let next_instruction: Instruction = self.ram.read_bytes(self.program_counter, 2).into();
-            self.program_counter += 0x002;
-            match next_instruction {
-                Instruction::_00E0 => {
-                    self.display_state.clear();
-                }
-                Instruction::_00EE => {
-                    self.program_counter = self.stack.pop() as usize;
-                }
-                Instruction::_1nnn(addr) => {
-                    self.program_counter = addr as usize;
-                }
-                Instruction::_2nnn(addr) => {
-                    self.stack.push(self.program_counter as u16);
-                    self.program_counter = addr as usize;
-                }
-                Instruction::_6xkk(register, value) => {
-                    self.registers.write_vx(register as usize, value);
-                }
-                Instruction::_7xkk(register, value) => {
-                    let current_value = self.registers.read_vx(register as usize);
-                    self.registers
-                        .write_vx(register as usize, current_value + value);
-                }
-                Instruction::_Annn(addr) => {
-                    self.registers.write_i(addr);
-                }
-                Instruction::_Dxyn(reg_x, reg_y, n_rows) => {
-                    let x = self.registers.read_vx(reg_x as usize);
-                    let y = self.registers.read_vx(reg_y as usize);
-                    self.load_sprite(x, y, n_rows);
-                }
-                _ => unimplemented!(),
-            }
-        }
     }
 }
 
