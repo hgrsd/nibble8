@@ -68,7 +68,6 @@ impl<'a> Chip8<'a> {
             let delay = self.registers.read_delay_timer();
             if delay > 0 {
                 self.registers.set_delay_timer(delay - 1);
-                continue;
             }
 
             let next_instruction: Instruction = self.ram.read_bytes(self.program_counter, 2).into();
