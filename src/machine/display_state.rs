@@ -25,7 +25,7 @@ impl DisplayState {
 
     pub fn is_on(&mut self, x: usize, y: usize) -> bool {
         let (byte_idx, bit_idx) = self.identify(x, y);
-        get_bit_from_byte(bit_idx, self.raw[byte_idx])
+        get_bit_from_byte(bit_idx, &self.raw[byte_idx])
     }
 
     pub fn flip(&mut self, x: usize, y: usize) {

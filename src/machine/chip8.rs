@@ -83,7 +83,7 @@ impl<'a> Chip8<'a> {
                 let grid_x = wrapped_x + col;
                 let grid_y = wrapped_y + row;
 
-                let new_state = get_bit_from_byte(col, current_byte);
+                let new_state = get_bit_from_byte(col, &current_byte);
                 if !new_state {
                     continue;
                 }

@@ -1,4 +1,4 @@
-use crate::display::virtual_display::VirtualDisplay;
+use crate::{bit_utils::get_bit_from_byte, display::virtual_display::VirtualDisplay};
 
 pub struct TerminalDisplay {
     cols: usize,
@@ -17,8 +17,8 @@ impl VirtualDisplay for TerminalDisplay {
         let mut col = 0;
         for byte in bytes {
             for bit in 0..8 {
-                let val = (byte >> 7 - bit) & 0b00000001;
-                print!("{}", if val == 1 { "*" } else { "_" });
+                let is_on = get_bit_from_byte(bit, byte);
+                print!("{}", if is_on { "*" } else { "_" });
                 col += 1;
                 if col % self.cols == 0 {
                     println!();
