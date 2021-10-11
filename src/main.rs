@@ -1,11 +1,9 @@
 use display::sdl_display::SDLDisplay;
-use input::Input;
 use machine::chip8::Chip8;
 use sdl2::event::Event;
 use sdl2::keyboard::Keycode;
-use std::cell::RefCell;
 use std::env;
-use std::rc::Rc;
+use std::time::Duration;
 
 mod bit_utils;
 mod display;
@@ -19,10 +17,9 @@ fn main() {
         return;
     }
 
-    let input = Rc::new(RefCell::new(Input::new()));
     let sdl_context = sdl2::init().unwrap();
-    let mut display = SDLDisplay::init(&sdl_context, 320, 160);
-    let mut chip8 = Chip8::new(&mut display, input.clone());
+    let mut display = SDLDisplay::init(&sdl_context, 640, 320);
+    let mut chip8 = Chip8::new(&mut display);
 
     chip8.load_rom(&args[1]);
     let mut event_pump = sdl_context.event_pump().unwrap();
@@ -40,75 +37,76 @@ fn main() {
                 Event::KeyDown {
                     keycode: Some(Keycode::Num0),
                     ..
-                } => input.borrow_mut().register(0x00),
+                } => chip8.register_key(0x00),
                 Event::KeyDown {
                     keycode: Some(Keycode::Num1),
                     ..
-                } => input.borrow_mut().register(0x01),
+                } => chip8.register_key(0x01),
                 Event::KeyDown {
                     keycode: Some(Keycode::Num2),
                     ..
-                } => input.borrow_mut().register(0x02),
+                } => chip8.register_key(0x02),
                 Event::KeyDown {
                     keycode: Some(Keycode::Num3),
                     ..
-                } => input.borrow_mut().register(0x03),
+                } => chip8.register_key(0x03),
                 Event::KeyDown {
                     keycode: Some(Keycode::Num4),
                     ..
-                } => input.borrow_mut().register(0x04),
+                } => chip8.register_key(0x04),
                 Event::KeyDown {
                     keycode: Some(Keycode::Num5),
                     ..
-                } => input.borrow_mut().register(0x05),
+                } => chip8.register_key(0x05),
                 Event::KeyDown {
                     keycode: Some(Keycode::Num6),
                     ..
-                } => input.borrow_mut().register(0x06),
+                } => chip8.register_key(0x06),
                 Event::KeyDown {
                     keycode: Some(Keycode::Num7),
                     ..
-                } => input.borrow_mut().register(0x07),
+                } => chip8.register_key(0x07),
                 Event::KeyDown {
                     keycode: Some(Keycode::Num8),
                     ..
-                } => input.borrow_mut().register(0x08),
+                } => chip8.register_key(0x08),
                 Event::KeyDown {
                     keycode: Some(Keycode::Num9),
                     ..
-                } => input.borrow_mut().register(0x09),
+                } => chip8.register_key(0x09),
                 Event::KeyDown {
                     keycode: Some(Keycode::A),
                     ..
-                } => input.borrow_mut().register(0x0A),
+                } => chip8.register_key(0x0A),
                 Event::KeyDown {
                     keycode: Some(Keycode::B),
                     ..
-                } => input.borrow_mut().register(0x0B),
+                } => chip8.register_key(0x0B),
                 Event::KeyDown {
                     keycode: Some(Keycode::C),
                     ..
-                } => input.borrow_mut().register(0x0C),
+                } => chip8.register_key(0x0C),
                 Event::KeyDown {
                     keycode: Some(Keycode::D),
                     ..
-                } => input.borrow_mut().register(0x0D),
+                } => chip8.register_key(0x0D),
                 Event::KeyDown {
                     keycode: Some(Keycode::E),
                     ..
-                } => input.borrow_mut().register(0x0E),
+                } => chip8.register_key(0x0E),
                 Event::KeyDown {
                     keycode: Some(Keycode::F),
                     ..
-                } => input.borrow_mut().register(0x0F),
+                } => chip8.register_key(0x0F),
                 _ => {
-                    if iteration > 75 {
-                        input.borrow_mut().clear();
+                    if iteration > 40 {
+                        chip8.clear_keys();
                         iteration = 0;
                     }
                 }
             }
         }
         chip8.tick();
+        std::thread::sleep(Duration::from_millis(3));
     }
 }

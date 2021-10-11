@@ -1,16 +1,12 @@
 use crate::bit_utils::get_bit_from_byte;
 use crate::display::chip8_display::Chip8Display;
-use crate::input::Input;
 use crate::machine::display_state::DisplayState;
 use crate::machine::instruction::Instruction;
 use crate::machine::ram::Ram;
 use crate::machine::registers::Registers;
-use crate::machine::stack::Stack;
 use rand::Rng;
-use std::cell::RefCell;
 use std::fmt::{Debug, Formatter};
 use std::fs::read;
-use std::rc::Rc;
 
 // 16 default font sprites; each sprite is 5 bytes long (8*5 pixels)
 const FONT_SPRITES: [u8; 5 * 16] = [
@@ -41,26 +37,28 @@ pub struct Chip8<'a> {
     ram: Ram,
     program_counter: usize,
     registers: Registers,
-    stack: Stack,
+    stack: Vec<u16>,
     display: &'a mut dyn Chip8Display,
-    input: Rc<RefCell<Input>>,
     display_state: DisplayState,
     tick: u8,
+    keys_state: [bool; 16],
+    current_key: Option<u8>,
 }
 
 impl<'a> Chip8<'a> {
-    pub fn new(display: &'a mut dyn Chip8Display, input: Rc<RefCell<Input>>) -> Chip8<'a> {
+    pub fn new(display: &'a mut dyn Chip8Display) -> Chip8<'a> {
         let mut ram = Ram::initialise();
         ram.write_bytes(0x000, &FONT_SPRITES);
         Chip8 {
             program_counter: 0x000,
             ram,
             registers: Registers::new(),
-            stack: Stack::new(),
-            input,
+            stack: Vec::with_capacity(16),
             display,
             display_state: DisplayState::new(DISPLAY_COLS, DISPLAY_ROWS),
             tick: 0,
+            keys_state: [false; 16],
+            current_key: None,
         }
     }
 
@@ -68,6 +66,20 @@ impl<'a> Chip8<'a> {
         let bytes = read(file).expect("Unable to read file");
         self.ram.write_bytes(PROGRAM_OFFSET, &bytes);
         self.program_counter = PROGRAM_OFFSET;
+    }
+
+    pub fn register_key(&mut self, key: u8) {
+        self.current_key = Some(key);
+        self.keys_state[key as usize] = true;
+    }
+
+    pub fn clear_keys(&mut self) {
+        self.keys_state = [false; 16];
+        self.current_key = None;
+    }
+
+    fn is_pressed(&self, key: u8) -> bool {
+        self.keys_state[key as usize]
     }
 
     fn decr_timers(&mut self) {
@@ -123,14 +135,16 @@ impl<'a> Chip8<'a> {
             self.decr_timers();
             self.tick = 0;
         }
+
         let next_instruction: Instruction = self.ram.read_bytes(self.program_counter, 2).into();
         self.program_counter += 0x002;
+
         match next_instruction {
             Instruction::_00E0 => {
                 self.display_state.clear();
             }
             Instruction::_00EE => {
-                self.program_counter = self.stack.pop() as usize;
+                self.program_counter = self.stack.pop().unwrap() as usize;
             }
             Instruction::_1nnn(addr) => {
                 self.program_counter = addr as usize;
@@ -242,16 +256,14 @@ impl<'a> Chip8<'a> {
                 self.registers.write_vx(register as usize, rnd & value);
             }
             Instruction::_Ex9E(register) => {
-                let i = self.input.borrow();
                 let expected_key = self.registers.read_vx(register as usize);
-                if i.current_key == Some(expected_key) {
+                if self.is_pressed(expected_key) {
                     self.program_counter += 2;
                 }
             }
             Instruction::_ExA1(register) => {
-                let i = self.input.borrow();
                 let expected_key = self.registers.read_vx(register as usize);
-                if i.current_key != Some(expected_key) {
+                if !self.is_pressed(expected_key) {
                     self.program_counter += 2;
                 }
             }
@@ -260,8 +272,7 @@ impl<'a> Chip8<'a> {
                     .write_vx(register as usize, self.registers.read_delay_timer());
             }
             Instruction::_Fx0A(register) => {
-                let i = self.input.borrow();
-                if let Some(key) = i.current_key {
+                if let Some(key) = self.current_key {
                     self.registers.write_vx(register as usize, key);
                 } else {
                     self.program_counter -= 2;

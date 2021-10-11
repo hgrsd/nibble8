@@ -1,3 +1,5 @@
+use std::os::unix::thread;
+
 use sdl2::{pixels::Color, rect::Point, render::Canvas, video::Window, Sdl};
 
 use crate::{
@@ -15,7 +17,7 @@ impl SDLDisplay {
     pub fn init<'a>(sdl_context: &'a Sdl, width: u32, height: u32) -> Self {
         let video_subsystem = sdl_context.video().unwrap();
         let window = video_subsystem
-            .window("nibble8", 320, 160)
+            .window("nibble8", width, height)
             .position_centered()
             .build()
             .unwrap();
