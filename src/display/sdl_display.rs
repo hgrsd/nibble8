@@ -1,6 +1,9 @@
 use sdl2::{pixels::Color, rect::Point, render::Canvas, video::Window};
 
-use crate::{bit_utils::get_bit_from_byte, machine::chip8::DISPLAY_COLS};
+use crate::{
+    bit_utils::get_bit_from_byte,
+    machine::chip8::{DISPLAY_COLS, DISPLAY_ROWS},
+};
 
 use super::chip8_display::Chip8Display;
 
@@ -9,7 +12,11 @@ pub struct SDLDisplay<'a> {
 }
 
 impl<'a> SDLDisplay<'a> {
-    pub fn new(canvas: &'a mut Canvas<Window>) -> Self {
+    pub fn new(canvas: &'a mut Canvas<Window>, width: u32, height: u32) -> Self {
+        canvas.set_scale(
+            (width / DISPLAY_COLS as u32) as f32,
+            (height / DISPLAY_ROWS as u32) as f32,
+        ).unwrap();
         SDLDisplay { canvas }
     }
 }

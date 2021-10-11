@@ -23,13 +23,13 @@ fn main() {
     let sdl_context = sdl2::init().unwrap();
     let video_subsystem = sdl_context.video().unwrap();
     let window = video_subsystem
-        .window("nibble8", 800, 600)
+        .window("nibble8", 320, 160)
         .position_centered()
         .build()
         .unwrap();
 
     let mut canvas = window.into_canvas().build().unwrap();
-    let mut display = SDLDisplay::new(&mut canvas);
+    let mut display = SDLDisplay::new(&mut canvas, 320, 160);
     let mut chip8 = Chip8::new(&mut display, input.clone());
 
     chip8.load_rom(&args[1]);
