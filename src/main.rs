@@ -21,15 +21,7 @@ fn main() {
 
     let input = Rc::new(RefCell::new(Input::new()));
     let sdl_context = sdl2::init().unwrap();
-    let video_subsystem = sdl_context.video().unwrap();
-    let window = video_subsystem
-        .window("nibble8", 320, 160)
-        .position_centered()
-        .build()
-        .unwrap();
-
-    let mut canvas = window.into_canvas().build().unwrap();
-    let mut display = SDLDisplay::new(&mut canvas, 320, 160);
+    let mut display = SDLDisplay::init(&sdl_context, 320, 160);
     let mut chip8 = Chip8::new(&mut display, input.clone());
 
     chip8.load_rom(&args[1]);
@@ -109,13 +101,14 @@ fn main() {
                     keycode: Some(Keycode::F),
                     ..
                 } => input.borrow_mut().register(0x0F),
-                _ => {}
+                _ => {
+                    if iteration > 75 {
+                        input.borrow_mut().clear();
+                        iteration = 0;
+                    }
+                }
             }
         }
         chip8.tick();
-        if iteration == 20 {
-            input.borrow_mut().clear();
-            iteration = 0;
-        }
     }
 }

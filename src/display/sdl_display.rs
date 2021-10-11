@@ -1,4 +1,4 @@
-use sdl2::{pixels::Color, rect::Point, render::Canvas, video::Window};
+use sdl2::{pixels::Color, rect::Point, render::Canvas, video::Window, Sdl};
 
 use crate::{
     bit_utils::get_bit_from_byte,
@@ -7,21 +7,34 @@ use crate::{
 
 use super::chip8_display::Chip8Display;
 
-pub struct SDLDisplay<'a> {
-    canvas: &'a mut Canvas<Window>,
+pub struct SDLDisplay {
+    canvas: Canvas<Window>,
 }
 
-impl<'a> SDLDisplay<'a> {
-    pub fn new(canvas: &'a mut Canvas<Window>, width: u32, height: u32) -> Self {
-        canvas.set_scale(
-            (width / DISPLAY_COLS as u32) as f32,
-            (height / DISPLAY_ROWS as u32) as f32,
-        ).unwrap();
+impl SDLDisplay {
+    pub fn init<'a>(sdl_context: &'a Sdl, width: u32, height: u32) -> Self {
+        let video_subsystem = sdl_context.video().unwrap();
+        let window = video_subsystem
+            .window("nibble8", 320, 160)
+            .position_centered()
+            .build()
+            .unwrap();
+
+        let mut canvas = window.into_canvas().build().unwrap();
+        canvas
+            .set_scale(
+                (width / DISPLAY_COLS as u32) as f32,
+                (height / DISPLAY_ROWS as u32) as f32,
+            )
+            .unwrap();
+        canvas.set_draw_color(Color::BLACK);
+        canvas.clear();
+        canvas.present();
         SDLDisplay { canvas }
     }
 }
 
-impl Chip8Display for SDLDisplay<'_> {
+impl Chip8Display for SDLDisplay {
     fn draw(&mut self, bytes: &[u8]) {
         self.canvas.set_draw_color(Color::BLACK);
         self.canvas.clear();
