@@ -1,5 +1,3 @@
-use std::os::unix::thread;
-
 use sdl2::{pixels::Color, rect::Point, render::Canvas, video::Window, Sdl};
 
 use crate::{

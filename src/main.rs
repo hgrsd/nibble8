@@ -7,7 +7,6 @@ use std::time::Duration;
 
 mod bit_utils;
 mod display;
-mod input;
 mod machine;
 
 fn main() {
@@ -107,6 +106,6 @@ fn main() {
             }
         }
         chip8.tick();
-        std::thread::sleep(Duration::from_millis(3));
+        std::thread::sleep(Duration::from_millis(2));
     }
 }
