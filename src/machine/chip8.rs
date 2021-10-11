@@ -115,7 +115,6 @@ impl<'a> Chip8<'a> {
                 self.display_state.flip(grid_x, grid_y);
             }
         }
-        self.display.draw(&self.display_state.as_bytes());
     }
 
     pub fn tick(&mut self) {
@@ -277,7 +276,6 @@ impl<'a> Chip8<'a> {
                     .set_sound_timer(self.registers.read_vx(register as usize));
             }
             Instruction::_Fx1E(register) => {
-                // TODO - do we need to guard against overflows?
                 self.registers.write_i(
                     self.registers.read_i() + self.registers.read_vx(register as usize) as u16,
                 );
@@ -309,6 +307,7 @@ impl<'a> Chip8<'a> {
                 }
             }
         }
+        self.display.draw(&self.display_state.as_bytes());
     }
 }
 
