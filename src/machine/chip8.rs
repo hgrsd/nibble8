@@ -115,16 +115,19 @@ impl<'a> Chip8<'a> {
                 let grid_x = wrapped_x + col;
                 let grid_y = wrapped_y + row;
 
-                let new_state = get_bit_from_byte(col, &current_byte);
-                if !new_state {
-                    continue;
-                }
-
                 let current_state = self.display_state.is_on(grid_x, grid_y);
-                if current_state {
-                    self.registers.write_vx(0x0F, 1);
+                let new_state = get_bit_from_byte(col, &current_byte);
+
+                match (current_state, new_state) {
+                    (true, true) => {
+                        self.registers.write_vx(0x0F, 1);
+                        self.display_state.flip(grid_x, grid_y);
+                    }
+                    (false, true) => {
+                        self.display_state.flip(grid_x, grid_y);
+                    }
+                    _ => {}
                 }
-                self.display_state.flip(grid_x, grid_y);
             }
         }
     }

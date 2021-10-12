@@ -30,12 +30,23 @@ impl DisplayState {
 
     pub fn flip(&mut self, x: usize, y: usize) {
         let (byte_idx, bit_idx) = self.identify(x, y);
-        let byte = self.raw[byte_idx];
         let mask = 0b10000000 >> bit_idx;
-        self.raw[byte_idx] = byte ^ mask;
+        self.raw[byte_idx] ^= mask;
     }
 
     pub fn as_bytes(&self) -> &[u8] {
         &self.raw
+    }
+}
+
+#[cfg(test)]
+mod test {
+    use super::*;
+
+    #[test]
+    fn it_works() {
+        let mut s = DisplayState::new(8, 1);
+        s.flip(4, 0);
+        assert_eq!(s.as_bytes()[0], 0b0001000);
     }
 }

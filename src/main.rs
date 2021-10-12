@@ -106,6 +106,6 @@ fn main() {
             }
         }
         chip8.tick();
-        std::thread::sleep(Duration::from_millis(2));
+        std::thread::sleep(Duration::from_millis(1));
     }
 }
