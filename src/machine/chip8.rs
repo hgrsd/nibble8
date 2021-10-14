@@ -202,11 +202,10 @@ impl<'a> Chip8<'a> {
                 self.registers.write_vx(reg_x as usize, added as u8);
             }
             Instruction::_8xy5(reg_x, reg_y) => {
-                let x = self.registers.read_vx(reg_x as usize) as u16;
-                let y = self.registers.read_vx(reg_y as usize) as u16;
+                let x = self.registers.read_vx(reg_x as usize);
+                let y = self.registers.read_vx(reg_y as usize);
                 self.registers.write_vx(0x0F, if x > y { 1 } else { 0 });
-                let subtracted = if x > y { x - y } else { 0 };
-                self.registers.write_vx(reg_x as usize, subtracted as u8);
+                self.registers.write_vx(reg_x as usize, x.wrapping_sub(y));
             }
             Instruction::_8xy6(reg_x) => {
                 let x = self.registers.read_vx(reg_x as usize);
@@ -217,9 +216,8 @@ impl<'a> Chip8<'a> {
             Instruction::_8xy7(reg_x, reg_y) => {
                 let x = self.registers.read_vx(reg_x as usize);
                 let y = self.registers.read_vx(reg_y as usize);
-                let subtracted = if y > x { y - x } else { 0 };
                 self.registers.write_vx(0x0F, if y > x { 1 } else { 0 });
-                self.registers.write_vx(reg_x as usize, subtracted);
+                self.registers.write_vx(reg_x as usize, y.wrapping_sub(x));
             }
             Instruction::_8xyE(reg_x) => {
                 let x = self.registers.read_vx(reg_x as usize);
@@ -635,7 +633,7 @@ mod test {
         let instruction = Instruction::_8xy5(0x01, 0x02);
         chip8.run_instruction(instruction);
 
-        assert_eq!(chip8.registers.read_vx(0x01), 0);
+        assert_eq!(chip8.registers.read_vx(0x01), 254);
         assert_eq!(chip8.registers.read_vx(0x0F), 0);
     }
 
@@ -693,7 +691,7 @@ mod test {
         let instruction = Instruction::_8xy7(0x01, 0x02);
         chip8.run_instruction(instruction);
 
-        assert_eq!(chip8.registers.read_vx(0x01), 0);
+        assert_eq!(chip8.registers.read_vx(0x01), 236);
         assert_eq!(chip8.registers.read_vx(0x0F), 0);
     }
 
