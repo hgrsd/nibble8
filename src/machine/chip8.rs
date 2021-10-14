@@ -101,9 +101,10 @@ impl<'a> Chip8<'a> {
 
         self.registers.write_vx(0x0F, 0);
         let sprite_offset = self.registers.read_i();
-        for row in 0..n_rows as usize {
+
+        'bytes: for row in 0..n_rows as usize {
             let current_y = wrapped_y + row;
-            if current_y == DISPLAY_ROWS {
+            if current_y >= DISPLAY_ROWS {
                 continue;
             }
             let current_byte = self
@@ -111,8 +112,8 @@ impl<'a> Chip8<'a> {
                 .read_bytes(sprite_offset as usize + row as usize, 1)[0];
             for col in 0..8 {
                 let current_x = wrapped_x + col;
-                if current_x == DISPLAY_COLS {
-                    continue;
+                if current_x >= DISPLAY_COLS {
+                    continue 'bytes;
                 }
 
                 let current_state = self.display_state.is_on(current_x, current_y);
