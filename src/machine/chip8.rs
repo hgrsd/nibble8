@@ -102,29 +102,29 @@ impl<'a> Chip8<'a> {
         self.registers.write_vx(0x0F, 0);
         let sprite_offset = self.registers.read_i();
         for row in 0..n_rows as usize {
-            if wrapped_y + row == DISPLAY_ROWS {
-                break;
+            let current_y = wrapped_y + row;
+            if current_y == DISPLAY_ROWS {
+                continue;
             }
             let current_byte = self
                 .ram
                 .read_bytes(sprite_offset as usize + row as usize, 1)[0];
             for col in 0..8 {
-                if wrapped_x + col > DISPLAY_COLS {
+                let current_x = wrapped_x + col;
+                if current_x == DISPLAY_COLS {
                     continue;
                 }
-                let grid_x = wrapped_x + col;
-                let grid_y = wrapped_y + row;
 
-                let current_state = self.display_state.is_on(grid_x, grid_y);
+                let current_state = self.display_state.is_on(current_x, current_y);
                 let new_state = get_bit_from_byte(col, &current_byte);
 
                 match (current_state, new_state) {
                     (true, true) => {
                         self.registers.write_vx(0x0F, 1);
-                        self.display_state.flip(grid_x, grid_y);
+                        self.display_state.flip(current_x, current_y);
                     }
                     (false, true) => {
-                        self.display_state.flip(grid_x, grid_y);
+                        self.display_state.flip(current_x, current_y);
                     }
                     _ => {}
                 }
@@ -217,14 +217,14 @@ impl<'a> Chip8<'a> {
             Instruction::_8xy7(reg_x, reg_y) => {
                 let x = self.registers.read_vx(reg_x as usize);
                 let y = self.registers.read_vx(reg_y as usize);
-                let subtracted = if x > y { y - x } else { 0 };
+                let subtracted = if y > x { y - x } else { 0 };
                 self.registers.write_vx(0x0F, if y > x { 1 } else { 0 });
                 self.registers.write_vx(reg_x as usize, subtracted);
             }
-            Instruction::_8xyE(reg_x, _reg_y) => {
+            Instruction::_8xyE(reg_x) => {
                 let x = self.registers.read_vx(reg_x as usize);
                 self.registers
-                    .write_vx(0x0F, if get_bit_from_byte(7, &x) { 1 } else { 0 });
+                    .write_vx(0x0F, if get_bit_from_byte(0, &x) { 1 } else { 0 });
                 self.registers.write_vx(reg_x as usize, x << 1);
             }
             Instruction::_9xy0(reg_x, reg_y) => {
@@ -239,7 +239,7 @@ impl<'a> Chip8<'a> {
             }
             Instruction::_Bnnn(addr) => {
                 let v0 = self.registers.read_vx(0x00);
-                self.program_counter += addr as usize + v0 as usize;
+                self.program_counter = addr as usize + v0 as usize;
             }
             Instruction::_Dxyn(reg_x, reg_y, n_rows) => {
                 let x = self.registers.read_vx(reg_x as usize);
@@ -348,7 +348,8 @@ mod test {
     fn clear() {
         let mut display = DisplayMock {};
         let mut chip8 = Chip8::new(&mut display);
-        // load a letter from the font
+
+        // load first letter from the font
         chip8.load_sprite(0, 0, 5);
         assert_ne!(
             chip8.display_state.as_bytes(),
@@ -652,6 +653,153 @@ mod test {
         assert_eq!(chip8.registers.read_vx(0x0F), 0);
     }
 
+    #[test]
+    fn shift_right_least_significant() {
+        let mut display = DisplayMock {};
+        let mut chip8 = Chip8::new(&mut display);
 
+        chip8.registers.write_vx(0x01, 0b00110101);
 
+        let instruction = Instruction::_8xy6(0x01);
+        chip8.run_instruction(instruction);
+
+        assert_eq!(chip8.registers.read_vx(0x01), 0b00011010);
+        assert_eq!(chip8.registers.read_vx(0x0F), 1);
+    }
+
+    #[test]
+    fn subtract_registers() {
+        let mut display = DisplayMock {};
+        let mut chip8 = Chip8::new(&mut display);
+
+        chip8.registers.write_vx(0x01, 200);
+        chip8.registers.write_vx(0x02, 215);
+
+        let instruction = Instruction::_8xy7(0x01, 0x02);
+        chip8.run_instruction(instruction);
+
+        assert_eq!(chip8.registers.read_vx(0x01), 15);
+        assert_eq!(chip8.registers.read_vx(0x0F), 1);
+    }
+
+    #[test]
+    fn subtract_registers_underflow() {
+        let mut display = DisplayMock {};
+        let mut chip8 = Chip8::new(&mut display);
+
+        chip8.registers.write_vx(0x01, 200);
+        chip8.registers.write_vx(0x02, 180);
+
+        let instruction = Instruction::_8xy7(0x01, 0x02);
+        chip8.run_instruction(instruction);
+
+        assert_eq!(chip8.registers.read_vx(0x01), 0);
+        assert_eq!(chip8.registers.read_vx(0x0F), 0);
+    }
+
+    #[test]
+    fn shift_left() {
+        let mut display = DisplayMock {};
+        let mut chip8 = Chip8::new(&mut display);
+
+        chip8.registers.write_vx(0x01, 0b01001101);
+
+        let instruction = Instruction::_8xyE(0x01);
+        chip8.run_instruction(instruction);
+
+        assert_eq!(chip8.registers.read_vx(0x01), 0b10011010);
+        assert_eq!(chip8.registers.read_vx(0x0F), 0);
+    }
+
+    #[test]
+    fn shift_left_most_significant() {
+        let mut display = DisplayMock {};
+        let mut chip8 = Chip8::new(&mut display);
+
+        chip8.registers.write_vx(0x01, 0b11001101);
+
+        let instruction = Instruction::_8xyE(0x01);
+        chip8.run_instruction(instruction);
+
+        assert_eq!(chip8.registers.read_vx(0x01), 0b10011010);
+        assert_eq!(chip8.registers.read_vx(0x0F), 1);
+    }
+
+    #[test]
+    fn skip_cmp_ne_skips() {
+        let mut display = DisplayMock {};
+        let mut chip8 = Chip8::new(&mut display);
+
+        chip8.registers.write_vx(0x01, 0x0F);
+        chip8.registers.write_vx(0x02, 0x0E);
+
+        let instruction = Instruction::_9xy0(0x01, 0x02);
+        chip8.run_instruction(instruction);
+
+        assert_eq!(chip8.program_counter, 4);
+    }
+
+    #[test]
+    fn skip_cmp_ne_does_not_skip() {
+        let mut display = DisplayMock {};
+        let mut chip8 = Chip8::new(&mut display);
+
+        chip8.registers.write_vx(0x01, 0x0F);
+        chip8.registers.write_vx(0x02, 0x0F);
+
+        let instruction = Instruction::_9xy0(0x01, 0x02);
+        chip8.run_instruction(instruction);
+
+        assert_eq!(chip8.program_counter, 2);
+    }
+
+    #[test]
+    fn set_addr() {
+        let mut display = DisplayMock {};
+        let mut chip8 = Chip8::new(&mut display);
+
+        let instruction = Instruction::_Annn(0x140F);
+        chip8.run_instruction(instruction);
+
+        assert_eq!(chip8.registers.read_i(), 0x140F);
+    }
+
+    #[test]
+    fn jump_with_reg() {
+        let mut display = DisplayMock {};
+        let mut chip8 = Chip8::new(&mut display);
+
+        chip8.registers.write_vx(0x00, 0x13);
+
+        let instruction = Instruction::_Bnnn(0x23);
+        chip8.run_instruction(instruction);
+
+        assert_eq!(chip8.program_counter, 0x13 + 0x23);
+    }
+
+    #[test]
+    fn draw() {
+        let mut display = DisplayMock {};
+        let mut chip8 = Chip8::new(&mut display);
+
+        // draw first letter from font
+        let instruction = Instruction::_Dxyn(0, 0, 5);
+        chip8.run_instruction(instruction);
+
+        assert_eq!(&chip8.display_state.as_bytes()[0], &FONT_SPRITES[0]);
+        assert_eq!(&chip8.display_state.as_bytes()[8], &FONT_SPRITES[1]);
+        assert_eq!(&chip8.display_state.as_bytes()[16], &FONT_SPRITES[2]);
+        assert_eq!(&chip8.display_state.as_bytes()[24], &FONT_SPRITES[3]);
+        assert_eq!(&chip8.display_state.as_bytes()[32], &FONT_SPRITES[4]);
+
+        // draw same sprite -> should flip bits
+        let instruction = Instruction::_Dxyn(0, 0, 5);
+        chip8.run_instruction(instruction);
+
+        assert_eq!(&chip8.display_state.as_bytes()[0], &0x00);
+        assert_eq!(&chip8.display_state.as_bytes()[8], &0x00);
+        assert_eq!(&chip8.display_state.as_bytes()[16], &0x00);
+        assert_eq!(&chip8.display_state.as_bytes()[24], &0x00);
+        assert_eq!(&chip8.display_state.as_bytes()[32], &0x00);
+    }
 }

@@ -17,7 +17,7 @@ impl DisplayState {
     }
 
     fn identify(&self, x: usize, y: usize) -> (usize, usize) {
-        let bit_idx = y * self.rows + x;
+        let bit_idx = y * self.cols + x;
         let byte_idx = bit_idx / 8;
         let bit_in_byte = bit_idx % 8;
         (byte_idx, bit_in_byte)
@@ -44,9 +44,29 @@ mod test {
     use super::*;
 
     #[test]
-    fn it_works() {
+    fn flip() {
         let mut s = DisplayState::new(8, 1);
         s.flip(4, 0);
         assert_eq!(s.as_bytes()[0], 0b0001000);
+
+        s.flip(4, 0);
+        assert_eq!(s.as_bytes()[0], 0b0000000);
+    }
+
+    #[test]
+    fn identify() {
+        let s = DisplayState::new(64, 32);
+
+        let (byte, bit) = s.identify(0, 0);
+        assert_eq!(byte, 0);
+        assert_eq!(bit, 0);
+
+        let (byte, bit) = s.identify(5, 0);
+        assert_eq!(byte, 0);
+        assert_eq!(bit, 5);
+
+        let (byte, bit) = s.identify(0, 1);
+        assert_eq!(byte, 8);
+        assert_eq!(bit, 0);
     }
 }
