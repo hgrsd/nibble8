@@ -3,7 +3,6 @@ use machine::chip8::Chip8;
 use sdl2::event::Event;
 use sdl2::keyboard::Keycode;
 use std::env;
-use std::time::Duration;
 
 mod bit_utils;
 mod display;
@@ -98,7 +97,7 @@ fn main() {
                     ..
                 } => chip8.register_key(0x0F),
                 _ => {
-                    if iteration > 70 {
+                    if iteration > 60 {
                         chip8.clear_keys();
                         iteration = 0;
                     }
@@ -106,6 +105,5 @@ fn main() {
             }
         }
         chip8.tick();
-        std::thread::sleep(Duration::from_millis(1));
     }
 }

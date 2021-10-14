@@ -316,7 +316,7 @@ impl<'a> Chip8<'a> {
 
     pub fn tick(&mut self) {
         self.tick += 1;
-        if self.tick % 10 == 0 {
+        if self.tick % 15 == 0 {
             self.decr_timers();
             self.tick = 0;
         }
