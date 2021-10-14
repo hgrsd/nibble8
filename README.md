@@ -1,6 +1,6 @@
 # Nibble8
 
-## Yet another Rust implementation of a Chip-8 interpreter, using [sdl2](https://crates.io/crates/sdl2).
+*Yet another Rust implementation of a Chip-8 interpreter, using [sdl2](https://crates.io/crates/sdl2).*
 
 ### Prerequisites
 
