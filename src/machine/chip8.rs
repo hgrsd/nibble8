@@ -801,4 +801,210 @@ mod test {
         assert_eq!(&chip8.display_state.as_bytes()[24], &0x00);
         assert_eq!(&chip8.display_state.as_bytes()[32], &0x00);
     }
+
+    #[test]
+    fn rnd() {
+        // we expect this instruction to AND the given value with a random
+        // number and store the result in Vx. In this test we use a mask of
+        // 255 to AND with the random number so we can assert that the number
+        // is indeed at least pseudo-random
+
+        let mut display = DisplayMock {};
+        let mut chip8 = Chip8::new(&mut display);
+
+        let instruction = Instruction::_Cxkk(0x01, 255);
+        chip8.run_instruction(instruction);
+        let first = chip8.registers.read_vx(0x01);
+
+        let instruction = Instruction::_Cxkk(0x01, 255);
+        chip8.run_instruction(instruction);
+        let second = chip8.registers.read_vx(0x01);
+
+        assert_ne!(first, second);
+    }
+
+    #[test]
+    fn skip_if_key_skips() {
+        let mut display = DisplayMock {};
+        let mut chip8 = Chip8::new(&mut display);
+
+        chip8.registers.write_vx(0x01, 0xA);
+        chip8.register_key(0xA);
+        let instruction = Instruction::_Ex9E(0x01);
+        chip8.run_instruction(instruction);
+
+        assert_eq!(chip8.program_counter, 4);
+    }
+
+    #[test]
+    fn skip_if_key_does_not_skip() {
+        let mut display = DisplayMock {};
+        let mut chip8 = Chip8::new(&mut display);
+
+        chip8.registers.write_vx(0x01, 0xA);
+        chip8.register_key(0xB);
+        let instruction = Instruction::_Ex9E(0x01);
+        chip8.run_instruction(instruction);
+
+        assert_eq!(chip8.program_counter, 2);
+    }
+
+    #[test]
+    fn skip_if_not_key_skips() {
+        let mut display = DisplayMock {};
+        let mut chip8 = Chip8::new(&mut display);
+
+        chip8.registers.write_vx(0x01, 0x0A);
+        chip8.register_key(0xB);
+        let instruction = Instruction::_ExA1(0x01);
+        chip8.run_instruction(instruction);
+
+        assert_eq!(chip8.program_counter, 4);
+    }
+
+    #[test]
+    fn skip_if_not_key_does_not_skip() {
+        let mut display = DisplayMock {};
+        let mut chip8 = Chip8::new(&mut display);
+
+        chip8.registers.write_vx(0x01, 0x0A);
+        chip8.register_key(0xA);
+        let instruction = Instruction::_ExA1(0x01);
+        chip8.run_instruction(instruction);
+
+        assert_eq!(chip8.program_counter, 2);
+    }
+
+    #[test]
+    fn wait_for_key_waits() {
+        let mut display = DisplayMock {};
+        let mut chip8 = Chip8::new(&mut display);
+
+        chip8.current_key = None;
+        let instruction = Instruction::_Fx0A(0x01);
+        chip8.run_instruction(instruction);
+
+        assert_eq!(chip8.program_counter, 0);
+    }
+
+    #[test]
+    fn wait_for_key_stores_key() {
+        let mut display = DisplayMock {};
+        let mut chip8 = Chip8::new(&mut display);
+
+        chip8.current_key = Some(0x0F);
+        let instruction = Instruction::_Fx0A(0x01);
+        chip8.run_instruction(instruction);
+
+        assert_eq!(chip8.program_counter, 2);
+        assert_eq!(chip8.registers.read_vx(0x01), 0x0F);
+    }
+
+    #[test]
+    fn set_delay_timer() {
+        let mut display = DisplayMock {};
+        let mut chip8 = Chip8::new(&mut display);
+
+        chip8.registers.write_vx(0x01, 30);
+        let instruction = Instruction::_Fx15(0x01);
+        chip8.run_instruction(instruction);
+
+        assert_eq!(chip8.registers.read_delay_timer(), 30);
+    }
+
+    #[test]
+    fn set_sound_timer() {
+        let mut display = DisplayMock {};
+        let mut chip8 = Chip8::new(&mut display);
+
+        chip8.registers.write_vx(0x01, 30);
+        let instruction = Instruction::_Fx18(0x01);
+        chip8.run_instruction(instruction);
+
+        assert_eq!(chip8.registers.read_sound_timer(), 30);
+    }
+
+    #[test]
+    fn add_register_to_addr() {
+        let mut display = DisplayMock {};
+        let mut chip8 = Chip8::new(&mut display);
+
+        chip8.registers.write_vx(0x01, 0x0004);
+        chip8.registers.write_i(0x000F);
+        let instruction = Instruction::_Fx29(0x01);
+        chip8.run_instruction(instruction);
+
+        assert_eq!(chip8.registers.read_i(), 0x0014);
+    }
+
+    #[test]
+    fn set_font_addr() {
+        let mut display = DisplayMock {};
+        let mut chip8 = Chip8::new(&mut display);
+
+        // the F sprite starts at byte 75
+        chip8.registers.write_vx(0x01, 0x0F);
+        let instruction = Instruction::_Fx29(0x01);
+        chip8.run_instruction(instruction);
+
+        assert_eq!(chip8.registers.read_i(), 75);
+    }
+
+    #[test]
+    fn binary_coded_decimal() {
+        let mut display = DisplayMock {};
+        let mut chip8 = Chip8::new(&mut display);
+
+        chip8.registers.write_vx(0x01, 123);
+        let instruction = Instruction::_Fx33(0x01);
+        chip8.run_instruction(instruction);
+
+        let expected: [u8; 3] = [1, 2, 3];
+
+        assert_eq!(
+            chip8.ram.read_bytes(chip8.registers.read_i() as usize, 3),
+            &expected
+        );
+    }
+
+    #[test]
+    fn load_registers_in_ram() {
+        let mut display = DisplayMock {};
+        let mut chip8 = Chip8::new(&mut display);
+
+        chip8.registers.write_i(PROGRAM_OFFSET as u16);
+        chip8.registers.write_vx(0x00, 0x0A);
+        chip8.registers.write_vx(0x01, 0x0F);
+        chip8.registers.write_vx(0x02, 0x01);
+        chip8.registers.write_vx(0x03, 0x07);
+
+        let instruction = Instruction::_Fx55(0x03);
+        chip8.run_instruction(instruction);
+
+        let expected: [u8; 5] = [0x0A, 0x0F, 0x01, 0x07, 0x00]; // last byte unaffected
+
+        assert_eq!(
+            chip8.ram.read_bytes(chip8.registers.read_i() as usize, 5),
+            &expected
+        );
+    }
+
+    #[test]
+    fn load_ram_to_registers() {
+        let mut display = DisplayMock {};
+        let mut chip8 = Chip8::new(&mut display);
+
+        chip8.registers.write_i(PROGRAM_OFFSET as u16);
+        chip8
+            .ram
+            .write_bytes(PROGRAM_OFFSET, &[0x04, 0x0F, 0x0A, 0x07]);
+        let instruction = Instruction::_Fx65(0x03);
+        chip8.run_instruction(instruction);
+
+        assert_eq!(chip8.registers.read_vx(0x00), 0x04);
+        assert_eq!(chip8.registers.read_vx(0x01), 0x0F);
+        assert_eq!(chip8.registers.read_vx(0x02), 0x0A);
+        assert_eq!(chip8.registers.read_vx(0x03), 0x07);
+        assert_eq!(chip8.registers.read_vx(0x04), 0x00); // <-- should be unaffacted
+    }
 }
