@@ -6,7 +6,7 @@ edition = "2018"
 authors = ["Daniel Hogers <daniel@hgrsd.nl>"]
 repository = "https://github.com/hgrsd/nibble8/"
 homepage = "https://github.com/hgrsd/nibble8/"
-license-file = "./LICENSE.md"
+license = "MIT"
 readme = "./README.md"
 documentation = "https://github.com/hgrsd/nibble8/blob/master/README.md"
 
