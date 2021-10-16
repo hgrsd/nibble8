@@ -1,6 +1,6 @@
 ![CI](https://github.com/hgrsd/nibble8/actions/workflows/ci.yaml/badge.svg)
 
-# Nibble8
+# nibble8
 
 ![an image showing the output of a chip 8 rom, i.e. the letters C8](assets/ch8.png)
 
