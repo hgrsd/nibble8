@@ -4,7 +4,7 @@
 
 ![an image showing the output of a chip 8 rom, i.e. the letters C8](assets/ch8.png)
 
-Yet another [Rust crate](https://crates/io/crates/nibble8) for a Chip-8 interpreter, using [sdl2](https://crates.io/crates/sdl2).
+Yet another [Rust crate](https://crates.io/crates/nibble8) for a Chip-8 interpreter, using [sdl2](https://crates.io/crates/sdl2).
 
 ### Prerequisites
 
