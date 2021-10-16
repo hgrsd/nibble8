@@ -34,6 +34,7 @@ nibble8 <path_to_rom.ch8>
 - [ ] Use a texture to draw rather than copying bit-by-bit
 - [ ] Improve timers
 - [ ] Make screen size configurable (?)
+- [ ] Sound
 
 ### Literature
 See the following articles on the Chip 8 instruction set.
