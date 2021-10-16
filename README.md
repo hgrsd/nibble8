@@ -12,6 +12,10 @@ SDL2 development library >= 2.0.5 must be installed. See [here](https://github.c
 
 ### Usage
 `cargo run --release <path_to_rom.ch8>`
+
+### Running the test suite
+`cargo test`
+
 ### Todo
 - [ ] Improve keyboard input
 - [ ] Use a texture to draw rather than copying bit-by-bit
