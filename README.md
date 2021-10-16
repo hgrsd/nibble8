@@ -13,10 +13,10 @@ SDL2 development library >= 2.0.5 must be installed. See [here](https://github.c
 ### Usage
 `cargo run --release <path_to_rom.ch8>`
 ### Todo
-- [ ] Complete writing tests for all instructions
 - [ ] Improve keyboard input
 - [ ] Use a texture to draw rather than copying bit-by-bit
-- [ ] Make screen size configurable
+- [ ] Improve timers
+- [ ] Make screen size configurable (?)
 
 ### Literature
 See the following articles on the Chip 8 instruction set.
