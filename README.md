@@ -4,14 +4,27 @@
 
 ![an image showing the output of a chip 8 rom, i.e. the letters C8](assets/ch8.png)
 
-Yet another Rust implementation of a Chip-8 interpreter, using [sdl2](https://crates.io/crates/sdl2).
+Yet another [Rust crate](https://crates/io/crates/nibble8) for a Chip-8 interpreter, using [sdl2](https://crates.io/crates/sdl2).
 
 ### Prerequisites
 
-SDL2 development library >= 2.0.5 must be installed. See [here](https://github.com/Rust-SDL2/rust-sdl2#sdl20-development-libraries) for installation instructions.
+The Rust toolchain should be installed.
+
+SDL2 development library >= 2.0.5 must also be installed. See [here](https://github.com/Rust-SDL2/rust-sdl2#sdl20-development-libraries) for installation instructions.
 
 ### Usage
-`cargo run --release <path_to_rom.ch8>`
+
+#### From source
+```sh
+git clone https://github.com/hgrsd/nibble8
+cargo run --release <path_to_rom.ch8>
+```
+
+#### Install binary
+```sh
+cargo install nibble8
+nibble8 <path_to_rom.ch8>
+```
 
 ### Running the test suite
 `cargo test`
@@ -21,6 +34,7 @@ SDL2 development library >= 2.0.5 must be installed. See [here](https://github.c
 - [ ] Use a texture to draw rather than copying bit-by-bit
 - [ ] Improve timers
 - [ ] Make screen size configurable (?)
+- [ ] Sound
 
 ### Literature
 See the following articles on the Chip 8 instruction set.
