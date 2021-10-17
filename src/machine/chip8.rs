@@ -283,7 +283,7 @@ impl<'a> Chip8<'a> {
             }
             Instruction::_Fx29(register) => {
                 let byte = self.registers.read_vx(register) as usize;
-                let address = 0x000 + (byte * 5);
+                let address = byte * 5;
                 self.registers.write_i(address);
             }
             Instruction::_Fx33(register) => {
@@ -318,7 +318,7 @@ impl<'a> Chip8<'a> {
         }
         let next_instruction: Instruction = self.ram.read_bytes(self.program_counter, 2).into();
         self.run_instruction(next_instruction);
-        self.display.draw(&self.display_state.as_bytes());
+        self.display.draw(self.display_state.as_bytes());
     }
 }
 

@@ -27,7 +27,7 @@ impl Debug for Ram {
         write!(f, "Mem: ").unwrap();
         for (offset, byte) in self.memory.iter().enumerate() {
             if offset % 32 == 0 {
-                writeln!(f, "").unwrap();
+                writeln!(f).unwrap();
             }
             write!(f, "{:#04X} ", byte).unwrap();
         }

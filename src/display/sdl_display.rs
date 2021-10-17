@@ -12,7 +12,7 @@ pub struct SDLDisplay {
 }
 
 impl SDLDisplay {
-    pub fn init<'a>(sdl_context: &'a Sdl, width: u32, height: u32) -> Self {
+    pub fn init(sdl_context: &Sdl, width: u32, height: u32) -> Self {
         let video_subsystem = sdl_context.video().unwrap();
         let window = video_subsystem
             .window("nibble8", width, height)
