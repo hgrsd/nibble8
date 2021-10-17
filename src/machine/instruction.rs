@@ -2,8 +2,8 @@
 pub enum Instruction {
     _00E0,
     _00EE,
-    _1nnn(u16),
-    _2nnn(u16),
+    _1nnn(usize),
+    _2nnn(usize),
     _3xkk(u8, u8),
     _4xkk(u8, u8),
     _5xy0(u8, u8),
@@ -19,8 +19,8 @@ pub enum Instruction {
     _8xy7(u8, u8),
     _8xyE(u8),
     _9xy0(u8, u8),
-    _Annn(u16),
-    _Bnnn(u16),
+    _Annn(usize),
+    _Bnnn(usize),
     _Cxkk(u8, u8),
     _Dxyn(u8, u8, u8),
     _Ex9E(u8),
@@ -40,14 +40,14 @@ impl From<&[u8]> for Instruction {
     fn from(bytes: &[u8]) -> Self {
         assert_eq!(bytes.len(), 2);
         let op_type = bytes[0] >> 4;
-        let x: u8 = bytes[0] & 0x0F;
+        let x = bytes[0] & 0x0F;
 
         let y: u8 = bytes[1] >> 4;
         let kk: u8 = bytes[1];
         let n: u8 = bytes[1] & 0x0F;
 
-        let combined: u16 = (bytes[0] as u16) << 8 | bytes[1] as u16;
-        let nnn: u16 = combined & 0x0FFF;
+        let combined: usize = (bytes[0] as usize) << 8 | bytes[1] as usize;
+        let nnn = combined & 0x0FFF;
 
         match (op_type, x, y, n) {
             (0x0, 0x0, 0xE, 0x0) => Instruction::_00E0,

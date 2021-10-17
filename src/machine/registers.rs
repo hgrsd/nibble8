@@ -2,7 +2,7 @@ use std::fmt::{Debug, Formatter};
 
 pub struct Registers {
     vx: [u8; 16],
-    i: u16,
+    i: usize,
     delay: u8,
     sound: u8,
 }
@@ -17,19 +17,19 @@ impl Registers {
         }
     }
 
-    pub fn read_vx(&self, x: usize) -> u8 {
-        self.vx[x]
+    pub fn read_vx(&self, x: u8) -> u8 {
+        self.vx[x as usize]
     }
 
-    pub fn write_vx(&mut self, x: usize, byte: u8) {
-        self.vx[x] = byte;
+    pub fn write_vx(&mut self, x: u8, byte: u8) {
+        self.vx[x as usize] = byte;
     }
 
-    pub fn read_i(&self) -> u16 {
+    pub fn read_i(&self) -> usize {
         self.i
     }
 
-    pub fn write_i(&mut self, bytes: u16) {
+    pub fn write_i(&mut self, bytes: usize) {
         self.i = bytes;
     }
 

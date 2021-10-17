@@ -150,85 +150,82 @@ impl<'a> Chip8<'a> {
                 self.program_counter = addr as usize;
             }
             Instruction::_3xkk(register, value) => {
-                if self.registers.read_vx(register as usize) == value {
+                if self.registers.read_vx(register) == value {
                     self.program_counter += 2;
                 }
             }
             Instruction::_4xkk(register, value) => {
-                if self.registers.read_vx(register as usize) != value {
+                if self.registers.read_vx(register) != value {
                     self.program_counter += 2;
                 }
             }
             Instruction::_5xy0(reg_x, reg_y) => {
-                if self.registers.read_vx(reg_x as usize) == self.registers.read_vx(reg_y as usize)
-                {
+                if self.registers.read_vx(reg_x) == self.registers.read_vx(reg_y) {
                     self.program_counter += 2;
                 }
             }
             Instruction::_6xkk(register, value) => {
-                self.registers.write_vx(register as usize, value);
+                self.registers.write_vx(register, value);
             }
             Instruction::_7xkk(register, value) => {
-                let current_value = self.registers.read_vx(register as usize);
-                self.registers.write_vx(
-                    register as usize,
-                    (current_value as u16 + value as u16) as u8,
-                );
+                let current_value = self.registers.read_vx(register);
+                self.registers
+                    .write_vx(register, (current_value as u16 + value as u16) as u8);
             }
             Instruction::_8xy0(reg_x, reg_y) => {
                 self.registers
-                    .write_vx(reg_x as usize, self.registers.read_vx(reg_y as usize));
+                    .write_vx(reg_x, self.registers.read_vx(reg_y));
             }
             Instruction::_8xy1(reg_x, reg_y) => {
-                let x = self.registers.read_vx(reg_x as usize);
-                let y = self.registers.read_vx(reg_y as usize);
-                self.registers.write_vx(reg_x as usize, x | y);
+                let x = self.registers.read_vx(reg_x);
+                let y = self.registers.read_vx(reg_y);
+                self.registers.write_vx(reg_x, x | y);
             }
             Instruction::_8xy2(reg_x, reg_y) => {
-                let x = self.registers.read_vx(reg_x as usize);
-                let y = self.registers.read_vx(reg_y as usize);
-                self.registers.write_vx(reg_x as usize, x & y);
+                let x = self.registers.read_vx(reg_x);
+                let y = self.registers.read_vx(reg_y);
+                self.registers.write_vx(reg_x, x & y);
             }
             Instruction::_8xy3(reg_x, reg_y) => {
-                let x = self.registers.read_vx(reg_x as usize);
-                let y = self.registers.read_vx(reg_y as usize);
-                self.registers.write_vx(reg_x as usize, x ^ y);
+                let x = self.registers.read_vx(reg_x);
+                let y = self.registers.read_vx(reg_y);
+                self.registers.write_vx(reg_x, x ^ y);
             }
             Instruction::_8xy4(reg_x, reg_y) => {
-                let x = self.registers.read_vx(reg_x as usize) as u16;
-                let y = self.registers.read_vx(reg_y as usize) as u16;
+                let x = self.registers.read_vx(reg_x) as u16;
+                let y = self.registers.read_vx(reg_y) as u16;
                 let added = x + y;
                 self.registers
                     .write_vx(0x0F, if added > u8::MAX.into() { 1 } else { 0 });
-                self.registers.write_vx(reg_x as usize, added as u8);
+                self.registers.write_vx(reg_x, added as u8);
             }
             Instruction::_8xy5(reg_x, reg_y) => {
-                let x = self.registers.read_vx(reg_x as usize);
-                let y = self.registers.read_vx(reg_y as usize);
+                let x = self.registers.read_vx(reg_x);
+                let y = self.registers.read_vx(reg_y);
                 self.registers.write_vx(0x0F, if x > y { 1 } else { 0 });
-                self.registers.write_vx(reg_x as usize, x.wrapping_sub(y));
+                self.registers.write_vx(reg_x, x.wrapping_sub(y));
             }
             Instruction::_8xy6(reg_x) => {
-                let x = self.registers.read_vx(reg_x as usize);
+                let x = self.registers.read_vx(reg_x);
                 self.registers
                     .write_vx(0x0F, if get_bit_from_byte(7, &x) { 1 } else { 0 });
-                self.registers.write_vx(reg_x as usize, x >> 1);
+                self.registers.write_vx(reg_x, x >> 1);
             }
             Instruction::_8xy7(reg_x, reg_y) => {
-                let x = self.registers.read_vx(reg_x as usize);
-                let y = self.registers.read_vx(reg_y as usize);
+                let x = self.registers.read_vx(reg_x);
+                let y = self.registers.read_vx(reg_y);
                 self.registers.write_vx(0x0F, if y > x { 1 } else { 0 });
-                self.registers.write_vx(reg_x as usize, y.wrapping_sub(x));
+                self.registers.write_vx(reg_x, y.wrapping_sub(x));
             }
             Instruction::_8xyE(reg_x) => {
-                let x = self.registers.read_vx(reg_x as usize);
+                let x = self.registers.read_vx(reg_x);
                 self.registers
                     .write_vx(0x0F, if get_bit_from_byte(0, &x) { 1 } else { 0 });
-                self.registers.write_vx(reg_x as usize, x << 1);
+                self.registers.write_vx(reg_x, x << 1);
             }
             Instruction::_9xy0(reg_x, reg_y) => {
-                let x = self.registers.read_vx(reg_x as usize);
-                let y = self.registers.read_vx(reg_y as usize);
+                let x = self.registers.read_vx(reg_x);
+                let y = self.registers.read_vx(reg_y);
                 if x != y {
                     self.program_counter += 2;
                 }
@@ -241,73 +238,72 @@ impl<'a> Chip8<'a> {
                 self.program_counter = addr as usize + v0 as usize;
             }
             Instruction::_Dxyn(reg_x, reg_y, n_rows) => {
-                let x = self.registers.read_vx(reg_x as usize);
-                let y = self.registers.read_vx(reg_y as usize);
+                let x = self.registers.read_vx(reg_x);
+                let y = self.registers.read_vx(reg_y);
                 self.load_sprite(x, y, n_rows);
             }
             Instruction::_Cxkk(register, value) => {
                 let rnd = rand::thread_rng().gen_range(0..=255) as u8;
-                self.registers.write_vx(register as usize, rnd & value);
+                self.registers.write_vx(register, rnd & value);
             }
             Instruction::_Ex9E(register) => {
-                let expected_key = self.registers.read_vx(register as usize);
+                let expected_key = self.registers.read_vx(register);
                 if self.is_pressed(expected_key) {
                     self.program_counter += 2;
                 }
             }
             Instruction::_ExA1(register) => {
-                let expected_key = self.registers.read_vx(register as usize);
+                let expected_key = self.registers.read_vx(register);
                 if !self.is_pressed(expected_key) {
                     self.program_counter += 2;
                 }
             }
             Instruction::_Fx07(register) => {
                 self.registers
-                    .write_vx(register as usize, self.registers.read_delay_timer());
+                    .write_vx(register, self.registers.read_delay_timer());
             }
             Instruction::_Fx0A(register) => {
                 if let Some(key) = self.current_key {
-                    self.registers.write_vx(register as usize, key);
+                    self.registers.write_vx(register, key);
                 } else {
                     self.program_counter -= 2;
                 }
             }
             Instruction::_Fx15(register) => {
                 self.registers
-                    .set_delay_timer(self.registers.read_vx(register as usize));
+                    .set_delay_timer(self.registers.read_vx(register));
             }
             Instruction::_Fx18(register) => {
                 self.registers
-                    .set_sound_timer(self.registers.read_vx(register as usize));
+                    .set_sound_timer(self.registers.read_vx(register));
             }
             Instruction::_Fx1E(register) => {
-                self.registers.write_i(
-                    self.registers.read_i() + self.registers.read_vx(register as usize) as u16,
-                );
+                self.registers
+                    .write_i(self.registers.read_i() + self.registers.read_vx(register) as usize);
             }
             Instruction::_Fx29(register) => {
-                let byte = self.registers.read_vx(register as usize);
+                let byte = self.registers.read_vx(register) as usize;
                 let address = 0x000 + (byte * 5);
-                self.registers.write_i(address as u16);
+                self.registers.write_i(address);
             }
             Instruction::_Fx33(register) => {
-                let number = self.registers.read_vx(register as usize);
+                let number = self.registers.read_vx(register);
                 let addr = self.registers.read_i();
-                self.ram.write_bytes(addr as usize, &[number / 100]);
-                self.ram
-                    .write_bytes(addr as usize + 1, &[number % 100 / 10]);
-                self.ram.write_bytes(addr as usize + 2, &[number % 10]);
+                self.ram.write_bytes(addr, &[number / 100]);
+                self.ram.write_bytes(addr, &[number % 100 / 10]);
+                self.ram.write_bytes(addr, &[number % 10]);
             }
             Instruction::_Fx55(last_register) => {
-                let addr = self.registers.read_i() as usize;
-                for i in 0..=last_register as usize {
-                    self.ram.write_bytes(addr + i, &[self.registers.read_vx(i)]);
+                let addr = self.registers.read_i();
+                for i in 0..=last_register {
+                    self.ram
+                        .write_bytes(addr + i as usize, &[self.registers.read_vx(i)]);
                 }
             }
             Instruction::_Fx65(last_register) => {
-                let addr = self.registers.read_i() as usize;
-                for i in 0..=last_register as usize {
-                    let bytes = self.ram.read_bytes(addr + i, 1);
+                let addr = self.registers.read_i();
+                for i in 0..=last_register {
+                    let bytes = self.ram.read_bytes(addr + i as usize, 1);
                     self.registers.write_vx(i, bytes[0]);
                 }
             }
@@ -972,7 +968,7 @@ mod test {
         let mut display = DisplayMock {};
         let mut chip8 = Chip8::new(&mut display);
 
-        chip8.registers.write_i(PROGRAM_OFFSET as u16);
+        chip8.registers.write_i(PROGRAM_OFFSET);
         chip8.registers.write_vx(0x00, 0x0A);
         chip8.registers.write_vx(0x01, 0x0F);
         chip8.registers.write_vx(0x02, 0x01);
@@ -994,7 +990,7 @@ mod test {
         let mut display = DisplayMock {};
         let mut chip8 = Chip8::new(&mut display);
 
-        chip8.registers.write_i(PROGRAM_OFFSET as u16);
+        chip8.registers.write_i(PROGRAM_OFFSET);
         chip8
             .ram
             .write_bytes(PROGRAM_OFFSET, &[0x04, 0x0F, 0x0A, 0x07]);
