@@ -97,7 +97,7 @@ fn main() {
                     ..
                 } => chip8.register_key(0x0F),
                 _ => {
-                    if iteration > 60 {
+                    if iteration > 70 {
                         chip8.clear_keys();
                         iteration = 0;
                     }

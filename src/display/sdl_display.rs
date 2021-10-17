@@ -29,32 +29,43 @@ impl SDLDisplay {
             .unwrap();
         canvas.set_draw_color(Color::BLACK);
         canvas.clear();
-        canvas.present();
         SDLDisplay { canvas }
     }
 }
 
 impl Chip8Display for SDLDisplay {
     fn draw(&mut self, bytes: &[u8]) {
-        self.canvas.set_draw_color(Color::BLACK);
-        self.canvas.clear();
-        self.canvas.set_draw_color(Color::GREEN);
-
-        let mut row = 0;
-        let mut col = 0;
-        for byte in bytes {
-            for bit in 0..8 {
-                if col == DISPLAY_COLS {
-                    row += 1;
-                    col = 0;
+        let texture_creator = self.canvas.texture_creator();
+        let mut texture = texture_creator
+            .create_texture_target(
+                self.canvas.default_pixel_format(),
+                DISPLAY_COLS as u32,
+                DISPLAY_ROWS as u32,
+            )
+            .unwrap();
+        self.canvas
+            .with_texture_canvas(&mut texture, |canvas| {
+                canvas.set_draw_color(Color::BLACK);
+                canvas.clear();
+                canvas.set_draw_color(Color::GREEN);
+                let mut row = 0;
+                let mut col = 0;
+                for byte in bytes {
+                    for bit in 0..8 {
+                        if col == DISPLAY_COLS {
+                            row += 1;
+                            col = 0;
+                        }
+                        let is_on = get_bit_from_byte(bit, byte);
+                        if is_on {
+                            canvas.draw_point(Point::new(col as i32, row)).unwrap();
+                        }
+                        col += 1;
+                    }
                 }
-                let is_on = get_bit_from_byte(bit, byte);
-                if is_on {
-                    self.canvas.draw_point(Point::new(col as i32, row)).unwrap();
-                }
-                col += 1;
-            }
-        }
+            })
+            .unwrap();
+        self.canvas.copy(&texture, None, None).unwrap();
         self.canvas.present();
     }
 }
