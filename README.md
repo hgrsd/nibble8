@@ -29,14 +29,11 @@ nibble8 <path_to_rom.ch8>
 ### Running the test suite
 `cargo test`
 
-### Todo
-- [ ] Improve keyboard input
-- [ ] Use a texture to draw rather than copying bit-by-bit
-- [ ] Improve timers
-- [ ] Make screen size configurable (?)
-- [ ] Sound
-
 ### Literature
 See the following articles on the Chip 8 instruction set.
 - https://tobiasvl.github.io/blog/write-a-chip-8-emulator/
 - http://devernay.free.fr/hacks/chip8/C8TECH10.HTM
+
+
+### Contributions
+Very welcome! Feel free to open a PR or to open a new issue.
