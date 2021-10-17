@@ -290,8 +290,8 @@ impl<'a> Chip8<'a> {
                 let number = self.registers.read_vx(register);
                 let addr = self.registers.read_i();
                 self.ram.write_bytes(addr, &[number / 100]);
-                self.ram.write_bytes(addr, &[number % 100 / 10]);
-                self.ram.write_bytes(addr, &[number % 10]);
+                self.ram.write_bytes(addr + 1, &[number % 100 / 10]);
+                self.ram.write_bytes(addr + 2, &[number % 10]);
             }
             Instruction::_Fx55(last_register) => {
                 let addr = self.registers.read_i();
