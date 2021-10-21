@@ -1,7 +1,7 @@
 [package]
 name = "nibble8"
 description = "Yet another Rust implementation of a Chip-8 interpreter, using sdl2."
-version = "0.1.4"
+version = "0.2.0"
 edition = "2021"
 authors = ["Daniel Hogers <daniel@hgrsd.nl>"]
 repository = "https://github.com/hgrsd/nibble8/"
